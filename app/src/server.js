@@ -348,21 +348,33 @@ app.get('/stream/:info', async (req, res) => {
 
 //Get deezer page
 app.get('/page', async (req, res) => {
-    let target = req.query.target.replace(/"/g, '');
+    let target = req.query.target.replace(/'/g, '');
 
-    let st = ['album', 'artist', 'channel', 'flow', 'playlist', 'smarttracklist', 'track', 'user'];
+    let st = [ 'album', 'artist', 'artistLineUp', 'channel', 'livestream', 'flow', 'playlist', 'radio', 'show', 'smarttracklist', 'track', 'user', 'video-link', 'external-link' ];
     let data = await deezer.callApi('page.get', {}, {
         'PAGE': target,
-        'VERSION': '2.3',
+        'VERSION': '2.5',
         'SUPPORT': {
+            'ads': [ /* 'native' */ ], //None
+            'deeplink-list': [ 'deeplink' ],
+            'event-card': [ 'live-event' ],
+            'grid-preview-one': st,
+            'grid-preview-two': st,
             'grid': st,
             'horizontal-grid': st,
-            'item-highlight': ['radio'],
-            'large-card': ['album', 'playlist', 'show', 'video-link'],
-            'ads': [] //None
+            'horizontal-list': [ 'track', 'song' ],
+            'item-highlight': [ 'radio' ],
+            'large-card': ['album', 'external-link', 'playlist', 'show', 'video-link'],
+            'list': [ 'episode' ],
+            'message': [ 'call_onboarding' ],
+            'mini-banner': [ 'external-link' ],
+            'slideshow':        [ 'album', 'artist', 'channel', 'external-link', 'flow', 'livestream', 'playlist', 'show', 'smarttracklist', 'user', 'video-link' ],
+            'small-horizontal-grid': [ 'flow' ],
+            'long-card-horizontal-grid': st,
+            'filterable-grid': [ 'flow' ]
         },
         'LANG': settings.contentLanguage,
-        'OPTIONS': []
+        'OPTIONS': [ 'deeplink_newsandentertainment', 'deeplink_subscribeoffer' ]
     });
 
     // logger.warn("data", data.results)
@@ -371,11 +383,12 @@ app.get('/page', async (req, res) => {
 });
 
 //Get smart track list or flow tracks
-app.get('/smarttracklist/:id', async (req, res) => {
+app.get('/smarttracklist/:type?/:id', async (req, res) => {
     let id = req.params.id;
-    
+    let type = req.params.type ? req.params.type : undefined;
+
     //Flow not normal STL
-    if (id == 'flow') {
+    if (id == 'flow' || type == 'flow') { // Not so clean check to know if it's flow
         let data = await deezer.callApi('radio.getUserRadio', {
             user_id: deezer.userId
         });
